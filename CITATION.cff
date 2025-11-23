@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "PanNuke Nuclei Segmentation with DINO Self-Supervision"
+authors:
+  - family-names: "RAY"
+    given-names: "Thomas"
+    alias: "ThomAS122102RAY"
+repository-code: "https://github.com/ThomAS122102RAY/PanNuke-cell-core-region-identification-with-DINO"
+url: "https://github.com/ThomAS122102RAY/PanNuke-cell-core-region-identification-with-DINO"
+abstract: "A deep learning pipeline for nuclei segmentation and classification on the PanNuke dataset, leveraging DINO self-supervised learning to pre-train a Vision Transformer backbone, followed by segmentation using a TransUNet-inspired architecture."
+keywords:
+  - nuclei segmentation
+  - DINO
+  - self-supervised learning
+  - PanNuke
+  - Vision Transformer
+  - TransUNet
+  - medical imaging
+  - histopathology
+license: Apache-2.0
+version: 1.0.0
+date-released: 2025-11-23
