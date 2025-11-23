@@ -1,5 +1,9 @@
 # PanNuke Nuclei Segmentation with DINO Self-Supervision
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-1.9+-ee4c2c.svg)](https://pytorch.org/)
+
 This project implements a deep learning pipeline for nuclei segmentation and classification on the [PanNuke dataset](https://www.kaggle.com/datasets/andrewmvd/cancer-inst-segmentation-and-classification) (Kaggle Mirror, split into 3 parts). It leverages **DINO (Self-distillation with no labels)** to pre-train a Vision Transformer (ViT) backbone on histopathology images, followed by a segmentation task using a TransUNet-inspired architecture.
 
 ## 🌟 Key Features
@@ -14,7 +18,7 @@ This project implements a deep learning pipeline for nuclei segmentation and cla
 
 1.  **Clone the repository**
     ```bash
-    cd git clone https://github.com/ThomAS122102RAY/PanNuke-cell-core-region-identification-with-DINO.git
+    git clone https://github.com/ThomAS122102RAY/PanNuke-cell-core-region-identification-with-DINO.git
     cd PanNuke-cell-core-region-identification-with-DINO
     ```
 
