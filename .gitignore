@@ -22,6 +22,7 @@ checkpoints/
 predictions/
 results/
 visualizations/
+inference_results/
 *.log
 tmp/
 cache/

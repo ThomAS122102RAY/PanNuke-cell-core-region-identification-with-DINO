@@ -15,14 +15,35 @@ from dataset import SimpleImageDataset, PanNukeDataset
 
 def parse_args():
     parser = argparse.ArgumentParser(description="PanNuke Segmentation Inference")
-    parser.add_argument('--input', required=True, help='Input directory containing images or PanNuke .npy files')
+    parser.add_argument('--input', help='Input directory containing images or PanNuke .npy files')
     parser.add_argument('--output', default='results', help='Output directory for predictions')
-    parser.add_argument('--weights', required=True, help='Path to trained model weights (.pth)')
+    parser.add_argument('--weights', help='Path to trained model weights (.pth)')
     parser.add_argument('--batch_size', type=int, default=4, help='Batch size')
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu', help='Device (cuda/cpu)')
     parser.add_argument('--pannuke_format', action='store_true', help='Set this flag if input is PanNuke dataset structure')
     parser.add_argument('--alpha', type=float, default=0.4, help='Overlay transparency')
-    return parser.parse_args()
+    
+    # Check if running without arguments (e.g. from VS Code run button)
+    if len(sys.argv) == 1:
+        print("[Info] No arguments provided. Using interactive prompts for testing.")
+        # Default Input: Try to find a test image or folder
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        default_input = os.path.join(project_root, 'data', 'pannuke', 'test')
+        if not os.path.exists(default_input):
+            default_input = input("Enter path to input folder (images or PanNuke .npy): ").strip()
+        # Prompt for model weights path
+        default_weights = input("Enter full path to model weights (.pth): ").strip()
+        if not default_weights:
+            raise FileNotFoundError("[Error] Model weights path not provided via prompt.")
+        if not os.path.isfile(default_weights):
+            raise FileNotFoundError(f"[Error] Model weights not found at '{default_weights}'.")
+        args = parser.parse_args([
+            '--input', default_input,
+            '--output', os.path.join(project_root, 'inference_results'),
+            '--weights', default_weights,
+            '--pannuke_format'  # Assuming testing on PanNuke data by default
+        ])
+        return args
 
 def clean_mask(mask_binary):
     """Apply morphological opening to remove small noise."""
@@ -35,7 +56,7 @@ def clean_mask(mask_binary):
     return cleaned
 
 def create_overlay(image, pred_mask, alpha=0.4):
-    """Create visualization overlay."""
+    """Create visualization overlay with dual colors: Blue=Cells, Yellow=Background."""
     # Ensure image is uint8 [0, 255]
     if image.dtype != np.uint8:
         if image.max() <= 1.0:
@@ -43,23 +64,30 @@ def create_overlay(image, pred_mask, alpha=0.4):
         else:
             image = image.astype(np.uint8)
             
-    # Create colored mask (Blue for Cells)
+    # Create colored mask
+    # Blue for Cells (mask == 1), Yellow for Background (mask == 0)
     color_mask = np.zeros_like(image)
-    color_mask[pred_mask == 1] = [0, 0, 255] # Blue
+    color_mask[pred_mask == 1] = [0, 0, 255]    # Blue (RGB) for Cells
+    color_mask[pred_mask == 0] = [255, 255, 0]  # Yellow (RGB) for Background
     
-    # Blend
-    overlay = image.copy()
-    mask_indices = (pred_mask == 1)
-    overlay[mask_indices] = (image[mask_indices] * (1 - alpha) + color_mask[mask_indices] * alpha).astype(np.uint8)
+    # Blend entire image with colored mask
+    overlay = cv2.addWeighted(image, 1 - alpha, color_mask, alpha, 0)
     
     return overlay
 
 def main():
     args = parse_args()
+    # Ensure a valid model weights file is provided
+    if not args.weights or not os.path.isfile(args.weights):
+        raise FileNotFoundError(
+            f"[Error] Model weights not found: '{args.weights}'.\n"
+            "Please provide a valid path via '--weights' argument."
+        )
     os.makedirs(args.output, exist_ok=True)
     print(f"Input: {args.input}")
     print(f"Output: {args.output}")
     print(f"Device: {args.device}")
+
 
     # 1. Setup Data
     # Normalization matching training
@@ -125,6 +153,15 @@ def main():
                 overlay = cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR) # OpenCV uses BGR
                 overlay_path = os.path.join(args.output, f"{name}_overlay.jpg")
                 cv2.imwrite(overlay_path, overlay)
+
+                # ---- New: Save combined image (original + mask side‑by‑side) ----
+                # Convert original image to BGR for consistency
+                orig_bgr = cv2.cvtColor(orig_img, cv2.COLOR_RGB2BGR)
+                # Convert mask to 3‑channel BGR (white mask on black background)
+                mask_bgr = cv2.cvtColor(pred_mask * 255, cv2.COLOR_GRAY2BGR)
+                combined = np.concatenate([orig_bgr, mask_bgr], axis=1)
+                combined_path = os.path.join(args.output, f"{name}_combined.jpg")
+                cv2.imwrite(combined_path, combined)
 
     print("Done!")
 
